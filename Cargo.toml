@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-faer = { git = "https://github.com/sarah-ek/faer-rs" }
+faer = "0.18.0"
 nanstats = { git = "https://github.com/kiranshila/nanstats" }
 
 # CLI deps
@@ -21,7 +21,7 @@ pyo3 = { version = "0.21", features = ["extension-module"], optional = true }
 numpy = { version = "0.21", optional = true }
 
 [features]
-default = ["cli"]
+default = ["cli", "python"]
 nightly = ["faer/nightly", "nanstats/nightly"]
 cli = [
     "dep:psrdada",
@@ -57,6 +57,6 @@ name = "benchmarks"
 harness = false
 
 [dev-dependencies]
-faer = { git = "https://github.com/sarah-ek/faer-rs", features = ["rand"] }
-criterion = "0.4"
+faer = { version = "0.18.0", features = ["rand"] }
+criterion = "0.5"
 rand = "0.8"

@@ -1,10 +1,13 @@
 //! Logic to perform filtering through IO
 
 use crate::algos::clean_block;
+use crate::math::mean::column_mean;
 use byte_slice_cast::{AsMutSliceOf, AsSliceOf};
 use color_eyre::eyre::Result;
+use faer::mat;
 use faer::prelude::*;
 use memmap2::Mmap;
+use nanstats::NaNMean;
 use psrdada::prelude::*;
 use sigproc_filterbank::{read::ReadFilterbank, write::WriteFilterbank};
 use std::{
@@ -156,12 +159,15 @@ pub fn clean_psrdada(
             // And then do the cleaning
             clean_block(mat.as_mut(), first_pass_sigma, second_pass_sigma);
 
+            // Find the nanmean of the masked data
+            let mean = column_mean(mat.as_ref()).as_slice().nanmean();
+
             // Finally, for feeding heimdall, we want to replace every NaN with zero
             for j in 0..samples {
                 let mut col = mat.as_mut().col_mut(j);
                 zipped!(&mut col).for_each(|unzipped!(mut x)| {
                     if (*x).is_nan() {
-                        *x = 0.;
+                        *x = mean;
                     }
                 })
             }
