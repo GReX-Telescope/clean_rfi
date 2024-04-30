@@ -12,32 +12,21 @@ pub mod python {
     use numpy::{ndarray::ArrayViewMut2, PyArray2, PyArrayMethods};
     use pyo3::prelude::*;
 
-    fn clean_block(
-        mat: ArrayViewMut2<'_, f32>,
-        first_pass_sigma: f32,
-        second_pass_sigma: f32,
-        detrend_order: usize,
-    ) {
+    fn clean_block(mat: ArrayViewMut2<'_, f32>, first_pass_sigma: f32, second_pass_sigma: f32) {
         // Transpose so the Mat is column-major when we hand it to faer
         let faer_block = mat.into_faer().transpose_mut();
-        algos::clean_block(
-            faer_block,
-            first_pass_sigma,
-            second_pass_sigma,
-            detrend_order,
-        );
+        algos::clean_block(faer_block, first_pass_sigma, second_pass_sigma);
     }
 
     #[pyfunction]
-    #[pyo3(name = "clean_block", signature = (mat, first_pass_sigma=3.0, second_pass_sigma=5.0, detrend_order=4))]
+    #[pyo3(name = "clean_block", signature = (mat, first_pass_sigma=3.0, second_pass_sigma=5.0))]
     fn clean_block_py(
         mat: &Bound<'_, PyArray2<f32>>,
         first_pass_sigma: f32,
         second_pass_sigma: f32,
-        detrend_order: usize,
     ) {
         let mat = unsafe { mat.as_array_mut() };
-        clean_block(mat, first_pass_sigma, second_pass_sigma, detrend_order);
+        clean_block(mat, first_pass_sigma, second_pass_sigma);
     }
 
     #[pymodule]

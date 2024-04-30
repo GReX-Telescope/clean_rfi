@@ -6,9 +6,6 @@ use color_eyre::eyre::Result;
 struct Args {
     #[command(subcommand)]
     method: Method,
-    /// Polynomial order used in detrending
-    #[clap(short, default_value_t = 4)]
-    detrend_order: usize,
     /// Standard deviation threshold in first pass
     #[clap(short, default_value_t = 3.0)]
     first_pass_sigma: f32,
@@ -48,20 +45,12 @@ fn main() -> Result<()> {
     color_eyre::install()?;
 
     match args.method {
-        Method::Dada { from, to } => clean_psrdada(
-            from,
-            to,
-            args.first_pass_sigma,
-            args.second_pass_sigma,
-            args.detrend_order,
-        )?,
-        Method::Filterbank { from, to } => clean_filterbank(
-            &from,
-            &to,
-            args.first_pass_sigma,
-            args.second_pass_sigma,
-            args.detrend_order,
-        )?,
+        Method::Dada { from, to } => {
+            clean_psrdada(from, to, args.first_pass_sigma, args.second_pass_sigma)?
+        }
+        Method::Filterbank { from, to } => {
+            clean_filterbank(&from, &to, args.first_pass_sigma, args.second_pass_sigma)?
+        }
     };
 
     Ok(())

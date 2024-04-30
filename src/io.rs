@@ -14,14 +14,11 @@ use std::{
 
 const CHANNELS: usize = 2048;
 
-//use crate::algos::clean_block;
-
 pub fn clean_filterbank(
     in_file: &str,
     out_file: &str,
     first_pass_sigma: f32,
     second_pass_sigma: f32,
-    detrend_order: usize,
 ) -> Result<()> {
     // Open and parse the input
     let fb_in_file = File::open(in_file)?;
@@ -77,12 +74,7 @@ pub fn clean_filterbank(
     let mut mat = data_in.to_owned();
 
     // Clean the data
-    clean_block(
-        mat.as_mut(),
-        first_pass_sigma,
-        second_pass_sigma,
-        detrend_order,
-    );
+    clean_block(mat.as_mut(), first_pass_sigma, second_pass_sigma);
 
     // Then write each time series to the file
     for i in 0..mat.ncols() {
@@ -99,7 +91,6 @@ pub fn clean_psrdada(
     out_key: i32,
     first_pass_sigma: f32,
     second_pass_sigma: f32,
-    detrend_order: usize,
 ) -> Result<()> {
     // Read a block at a time from PSRDADA and write to another PSRDADA buffer
     // Both buffers must exist at runtime, we're not creating them
@@ -163,12 +154,7 @@ pub fn clean_psrdada(
                 mat::from_column_major_slice_mut(write_floats, CHANNELS, samples);
 
             // And then do the cleaning
-            clean_block(
-                mat.as_mut(),
-                first_pass_sigma,
-                second_pass_sigma,
-                detrend_order,
-            );
+            clean_block(mat.as_mut(), first_pass_sigma, second_pass_sigma);
 
             // Finally, for feeding heimdall, we want to replace every NaN with zero
             for j in 0..samples {
