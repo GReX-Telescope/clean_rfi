@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-faer = "0.18.0"
+faer = "0.18"
 nanstats = { git = "https://github.com/kiranshila/nanstats" }
 
 # CLI deps

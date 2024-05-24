@@ -170,6 +170,24 @@ pub fn varcut_channels_with_simd<S: Simd>(simd: S, mat: MatMut<'_, f32>, thresho
     mask_rows(mat, mask.as_ref());
 }
 
+/// Remove time samples (columns) whose mean value is very small
+#[pulp::with_simd(remove_dead_time = pulp::Arch::new())]
+pub fn remove_dead_time_with_simd<S: Simd>(simd: S, mut mat: MatMut<'_, f32>, threshold: f32) {
+    _ = simd;
+    let n = mat.ncols();
+    // Compute average power per time step
+    let avg_pow_v_time = row_mean(mat.as_ref());
+    // Find bad time
+    let mut mask = Row::<f32>::zeros(n);
+    zipped!(&mut mask, &avg_pow_v_time).for_each(|unzipped!(mut mask, pow)| {
+        if *pow < threshold {
+            *mask = f32::NAN;
+        }
+    });
+    // Apply mask
+    mask_columns(mat.rb_mut(), mask.as_ref());
+}
+
 /// Normalize bandpass and remove dead channels (channels with low power)
 #[pulp::with_simd(normalize_and_trim_bandpass = pulp::Arch::new())]
 #[inline(always)]
@@ -212,6 +230,9 @@ pub fn clean_block(mut mat: MatMut<'_, f32>, first_pass_sigma: f32, second_pass_
     bad_channels.append(&mut (1797..=2047).collect());
     channel_mask(mat.rb_mut(), &bad_channels);
 
+    // Remove dead time samples that resulted from packet drops
+    remove_dead_time(mat.rb_mut(), 0.001);
+
     // Remove bandpass variation
     normalize_and_trim_bandpass(mat.rb_mut(), 0.001);
 
@@ -233,6 +254,21 @@ pub mod tests {
         detrend_columns(a.as_mut(), 2);
         let detrended = mat![[-3.0f32, -3.0, -3.0], [0.0, 0.0, 0.0], [3.0, 3.0, 3.0]];
         assert_matrix_eq!(a, detrended, comp = abs, tol = 1e-6);
+    }
+
+    #[test]
+    fn test_remove_dead_time() {
+        let mut a = mat![
+            [1.0, 0.0, 3.0],
+            [4.0, 0.0, 6.0],
+            [7.0, 0.0, 9.0],
+            [10.0, 0.0, 12.0]
+        ];
+        remove_dead_time(a.as_mut(), 0.01);
+        assert!(a.get(0, 1).is_nan());
+        assert!(a.get(1, 1).is_nan());
+        assert!(a.get(2, 1).is_nan());
+        assert!(a.get(3, 1).is_nan());
     }
 
     #[test]
